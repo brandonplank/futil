@@ -1,0 +1,43 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "CryptoSwift",
+        "repositoryURL": "https://github.com/krzyzanowskim/CryptoSwift.git",
+        "state": {
+          "branch": "main",
+          "revision": "7bde71b28791a5bdda04ffa7a5685a44291e576a",
+          "version": null
+        }
+      },
+      {
+        "package": "FlappyAPI",
+        "repositoryURL": "https://github.com/BrandonPlank/FlappyAPI",
+        "state": {
+          "branch": "main",
+          "revision": "13442cc3667c541528cd5d3eacbbc7fdd48bebe7",
+          "version": null
+        }
+      },
+      {
+        "package": "FlappyEncryption",
+        "repositoryURL": "https://github.com/BrandonPlank/FlappyEncryption",
+        "state": {
+          "branch": "main",
+          "revision": "44cc85a843916e60d2d03979ca0308b069699383",
+          "version": null
+        }
+      },
+      {
+        "package": "swift-argument-parser",
+        "repositoryURL": "https://github.com/apple/swift-argument-parser",
+        "state": {
+          "branch": null,
+          "revision": "6b2aa2748a7881eebb9f84fb10c01293e15b52ca",
+          "version": "0.5.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
