@@ -58,8 +58,12 @@ struct futil: ParsableCommand {
                     return
                 }
                 for flappyuser in users {
-                    print("\(flappyuser.name) | Score: \(flappyuser.score ?? 0) | Deaths: \(flappyuser.deaths!)")
+                    print("""
+------------------------------------------------------------------
+\(flappyuser.name) \t\t Score: \(flappyuser.score ?? 0) \t\t Deaths: \(flappyuser.deaths!)
+""")
                 }
+                print("------------------------------------------------------------------")
             } else {
                 print("Login with -l")
                 throw ExitCode(-1)
