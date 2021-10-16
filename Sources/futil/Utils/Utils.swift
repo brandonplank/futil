@@ -21,7 +21,8 @@ class Utils {
     
     static func ban(_ name: String, _ reason: String? = nil) {
         if let user = PasswordManager.readUser() {
-            FlappyAPI(endpoint: "ban").ban(user.name!, user.password!, getUserId(name), reason)
+            let ret = FlappyAPI(endpoint: "ban").ban(user.name!, user.password!, getUserId(name), reason)
+            print(ret ?? "Unspecified")
         } else {
             print("Unable to ban user")
             exit(EXIT_FAILURE)
@@ -30,7 +31,8 @@ class Utils {
     
     static func unban(_ name: String) {
         if let user = PasswordManager.readUser() {
-            FlappyAPI(endpoint: "unban").unban(user.name!, user.password!, getUserId(name))
+            let ret = FlappyAPI(endpoint: "unban").unban(user.name!, user.password!, getUserId(name))
+            print(ret ?? "Unspecified")
         } else {
             print("Unable to unban user")
             exit(EXIT_FAILURE)
