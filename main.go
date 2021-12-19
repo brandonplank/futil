@@ -85,7 +85,7 @@ func hasStrArg(s *string) bool {
 
 func main() {
 
-	parser := argparse.NewParser("futil", "Internal Flappy Bird moderation tool\\nIf you do not have permission to use this, you should not.")
+	parser := argparse.NewParser("futil", "Internal Flappy Bird moderation tool. If you do not have permission to use this, you should not.")
 
 	id := parser.String("i", "id", &argparse.Options{Required: false, Help: "Get the uuid from a name"})
 	list := parser.Flag("l", "list", &argparse.Options{Required: false, Help: "Lists all of the users, and their score"})
@@ -93,13 +93,14 @@ func main() {
 	ban := parser.String("b", "ban", &argparse.Options{Required: false, Help: "Ban a user"})
 	unban := parser.String("u", "unban", &argparse.Options{Required: false, Help: "Unban a user"})
 	restoreScore := parser.StringList("r", "restore", &argparse.Options{Required: false, Help: "Restore a users score, [name] [score]"})
+	logs := parser.Flag("", "log", &argparse.Options{Required: false, Help: "Shows the server log"})
 
 	delete := parser.String("d", "delete", &argparse.Options{Required: false, Help: "Delete a user"})
 
 	admin := parser.String("a", "admin", &argparse.Options{Required: false, Help: "Make a user a admin"})
 
 	err := parser.Parse(os.Args)
-	if err != nil {
+	if err != nil || len(os.Args) < 2 {
 		fmt.Print(parser.Usage(err))
 		return
 	}
@@ -160,11 +161,16 @@ func main() {
 		var users []User
 		body := callApi("auth/internalUsers", username, password)
 		json.Unmarshal(body, &users)
-		for i := 0; i < len(users); i++ {
+		for _, user := range users {
 			fmt.Println("------------------------------------------------------------------")
-			fmt.Println(users[i].Name + "\t\tScore: " + strconv.Itoa(users[i].Score) + "\t\tDeaths: " + strconv.Itoa(users[i].Deaths))
+			fmt.Println(user.Name + "\t\tScore: " + strconv.Itoa(user.Score) + "\t\tDeaths: " + strconv.Itoa(user.Deaths))
 		}
 		fmt.Println("------------------------------------------------------------------")
+	}
+
+	if *logs {
+		body := callApi("auth/logs", username, password)
+		fmt.Println(string(body))
 	}
 
 	if hasStrArg(admin) {
