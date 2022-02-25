@@ -94,6 +94,7 @@ func main() {
 	unban := parser.String("u", "unban", &argparse.Options{Required: false, Help: "Unban a user"})
 	restoreScore := parser.StringList("r", "restore", &argparse.Options{Required: false, Help: "Restore a users score, [name] [score]"})
 	logs := parser.Flag("", "log", &argparse.Options{Required: false, Help: "Shows the server log"})
+	jailbroken := parser.Flag("", "list-jail", &argparse.Options{Required: false, Help: "Shows jailbroken users"})
 
 	delete := parser.String("d", "delete", &argparse.Options{Required: false, Help: "Delete a user"})
 
@@ -166,6 +167,25 @@ func main() {
 			fmt.Println(user.Name + "\t\tScore: " + strconv.Itoa(user.Score) + "\t\tDeaths: " + strconv.Itoa(user.Deaths))
 		}
 		fmt.Println("------------------------------------------------------------------")
+	}
+
+	if *jailbroken {
+		var users []User
+		body := callApi("auth/internalUsers", username, password)
+		json.Unmarshal(body, &users)
+		var hasAtLestOneUser bool
+		for _, user := range users {
+			if user.Jailbroken {
+				hasAtLestOneUser = true
+				fmt.Println("------------------------------------------------------------------")
+				fmt.Println(user.Name + "\t\tScore: " + strconv.Itoa(user.Score) + "\t\tDeaths: " + strconv.Itoa(user.Deaths))
+			}
+		}
+		if hasAtLestOneUser {
+			fmt.Println("------------------------------------------------------------------")
+		} else {
+			fmt.Println("No jailbroken users")
+		}
 	}
 
 	if *logs {
