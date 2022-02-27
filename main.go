@@ -150,7 +150,7 @@ func main() {
 			return
 		}
 		fmt.Println("Setting", args[0]+"'s score to", score)
-		callApi("auth/restoreScore/"+GetID(args[0], username, password), username, password)
+		callApi(fmt.Sprintf("auth/restoreScore/%s/%s", GetID(args[0], username, password), args[1]), username, password)
 		fmt.Println("Set", args[0]+"'s score to", score)
 	}
 
