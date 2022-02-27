@@ -90,7 +90,7 @@ func main() {
 	id := parser.String("i", "id", &argparse.Options{Required: false, Help: "Get the uuid from a name"})
 	list := parser.Flag("l", "list", &argparse.Options{Required: false, Help: "Lists all of the users, and their score"})
 
-	ban := parser.String("b", "ban", &argparse.Options{Required: false, Help: "Ban a user"})
+	ban := parser.StringList("b", "ban", &argparse.Options{Required: false, Help: "Ban a user with reason"})
 	unban := parser.String("u", "unban", &argparse.Options{Required: false, Help: "Unban a user"})
 	restoreScore := parser.StringList("r", "restore", &argparse.Options{Required: false, Help: "Restore a users score, [name] [score]"})
 	logs := parser.Flag("", "log", &argparse.Options{Required: false, Help: "Shows the server log"})
@@ -123,10 +123,11 @@ func main() {
 		return
 	}
 
-	if hasStrArg(ban) {
-		fmt.Println("Banning", *ban)
-		callApi("auth/ban/"+GetID(*ban, username, password), username, password)
-		fmt.Println("Banned", *ban)
+	if len(*ban) > 1 && len(*ban) < 3 {
+		args := *ban
+		fmt.Println(fmt.Sprintf("Banning %s Reason: %s", args[0], args[1]))
+		callApi(fmt.Sprintf("auth/ban/%s/%s", GetID(args[0], username, password), args[1]), username, password)
+		fmt.Println("Banned", args[0])
 	}
 
 	if hasStrArg(unban) {
