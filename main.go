@@ -4,11 +4,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/akamensky/argparse"
 	"github.com/google/uuid"
+	"github.com/hellflame/argparse"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"sync"
@@ -126,20 +127,20 @@ func hasStrArg(s *string) bool {
 
 func main() {
 
-	parser := argparse.NewParser("futil", "Internal Flappy Bird moderation tool. If you do not have permission to use this, you should not.")
+	parser := argparse.NewParser("futil", "Internal Flappy Bird moderation tool. If you do not have permission to use this, you should not.", nil)
 
-	id := parser.String("i", "id", &argparse.Options{Required: false, Help: "Get the uuid from a name"})
-	list := parser.Flag("l", "list", &argparse.Options{Required: false, Help: "Lists all of the users, and their score"})
+	id := parser.String("i", "id", &argparse.Option{Required: false, Help: "Get the uuid from a name"})
+	list := parser.Flag("l", "list", &argparse.Option{Required: false, Help: "Lists all of the users, and their score"})
 
-	ban := parser.StringList("b", "ban", &argparse.Options{Required: false, Help: "Ban a user with reason"})
-	unban := parser.String("u", "unban", &argparse.Options{Required: false, Help: "Unban a user"})
-	restoreScore := parser.StringList("r", "restore", &argparse.Options{Required: false, Help: "Restore a users score, [name] [score]"})
-	logs := parser.Flag("", "log", &argparse.Options{Required: false, Help: "Shows the server log"})
-	jailbroken := parser.Flag("", "list-jail", &argparse.Options{Required: false, Help: "Shows jailbroken users"})
+	ban := parser.Strings("b", "ban", &argparse.Option{Required: false, Help: "Ban a user with reason", Positional: true})
+	unban := parser.String("u", "unban", &argparse.Option{Required: false, Help: "Unban a user"})
+	restoreScore := parser.Strings("r", "restore", &argparse.Option{Required: false, Help: "Restore a users score, [name] [score]", Positional: true})
+	logs := parser.Flag("", "log", &argparse.Option{Required: false, Help: "Shows the server log"})
+	jailbroken := parser.Flag("", "list-jail", &argparse.Option{Required: false, Help: "Shows jailbroken users"})
 
-	delete := parser.String("d", "delete", &argparse.Options{Required: false, Help: "Delete a user"})
+	delete := parser.String("d", "delete", &argparse.Option{Required: false, Help: "Delete a user"})
 
-	admin := parser.String("a", "admin", &argparse.Options{Required: false, Help: "Make a user a admin"})
+	admin := parser.String("a", "admin", &argparse.Option{Required: false, Help: "Make a user a admin"})
 
 	loginFIle, err := os.OpenFile(LoginFIle, os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
@@ -155,15 +156,15 @@ func main() {
 
 	err = parser.Parse(os.Args)
 	if err != nil || len(os.Args) < 2 {
-		fmt.Print(parser.Usage(err))
+		parser.PrintHelp()
 		return
 	}
 
-	if len(*ban) > 1 && len(*ban) < 3 {
+	if len(*ban) > 1 {
 		args := *ban
-		fmt.Println(fmt.Sprintf("Banning %s Reason: %s", args[0], args[1]))
-		callApi(fmt.Sprintf("auth/ban/%s/%s", GetID(args[0], Login.Username, Login.Password), args[1]), Login.Username, Login.Password)
-		fmt.Println("Banned", args[0])
+		fmt.Println(fmt.Sprintf("Banning %s Reason: %s", args[2], args[3]))
+		callApi(fmt.Sprintf("auth/ban/%s/%s", GetID(args[2], Login.Username, Login.Password), url.QueryEscape(args[3])), Login.Username, Login.Password)
+		fmt.Println("Banned", args[2])
 	}
 
 	if hasStrArg(unban) {
@@ -178,16 +179,16 @@ func main() {
 		fmt.Println("Deleted", *delete)
 	}
 
-	if len(*restoreScore) > 1 && len(*restoreScore) < 3 {
+	if len(*restoreScore) > 1 {
 		args := *restoreScore
-		score, err := strconv.Atoi(args[1])
+		score, err := strconv.Atoi(args[3])
 		if err != nil {
 			log.Fatal("Could not parse the score")
 			return
 		}
-		fmt.Println("Setting", args[0]+"'s score to", score)
-		callApi(fmt.Sprintf("auth/restoreScore/%s/%s", GetID(args[0], Login.Username, Login.Password), args[1]), Login.Username, Login.Password)
-		fmt.Println("Set", args[0]+"'s score to", score)
+		fmt.Println("Setting", args[2]+"'s score to", score)
+		callApi(fmt.Sprintf("auth/restoreScore/%s/%d", GetID(args[2], Login.Username, Login.Password), score), Login.Username, Login.Password)
+		fmt.Println("Set", args[2]+"'s score to", score)
 	}
 
 	if hasStrArg(id) {
