@@ -44,7 +44,7 @@ func WriteJSONToFile() {
 func ReadJSONToStruct() {
 	content, _ := ioutil.ReadFile(LoginFIle)
 	if len(content) <= 1 {
-		mainModel, _ := json.Marshal(FutilUser{})
+		mainModel, _ := json.MarshalIndent(FutilUser{}, "", "\t")
 		err := ioutil.WriteFile(LoginFIle, mainModel, os.ModePerm)
 		if err != nil {
 			log.Fatalln(err)
