@@ -6,20 +6,61 @@ import (
 	"fmt"
 	"github.com/akamensky/argparse"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
-type User struct {
-	ID        uuid.UUID `gorm:"primary_key" json:"id"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+var Login = new(FutilUser)
 
+type FutilUser struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+const LoginFIle = "login.json"
+
+var mutex sync.Mutex
+
+func WriteJSONToFile() {
+	database, err := os.OpenFile(LoginFIle, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer database.Close()
+
+	data, err := json.MarshalIndent(Login, "", "\t")
+
+	err = ioutil.WriteFile(LoginFIle, data, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func ReadJSONToStruct() {
+	content, _ := ioutil.ReadFile(LoginFIle)
+	if len(content) <= 1 {
+		mainModel, _ := json.Marshal(FutilUser{})
+		err := ioutil.WriteFile(LoginFIle, mainModel, os.ModePerm)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	} else {
+		err := json.Unmarshal(content, &Login)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+}
+
+type User struct {
+	ID               uuid.UUID `gorm:"primary_key" json:"id"`
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 	Name             string `json:"name" gorm:"unique"`
 	Score            int    `json:"score"`
 	Deaths           int    `json:"deaths"`
@@ -100,45 +141,40 @@ func main() {
 
 	admin := parser.String("a", "admin", &argparse.Options{Required: false, Help: "Make a user a admin"})
 
-	err := parser.Parse(os.Args)
+	loginFIle, err := os.OpenFile(LoginFIle, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer loginFIle.Close()
+
+	ReadJSONToStruct()
+
+	if len(Login.Username) < 1 || len(Login.Password) < 1 {
+		log.Fatal("You must add a username and password in login.json")
+	}
+
+	err = parser.Parse(os.Args)
 	if err != nil || len(os.Args) < 2 {
 		fmt.Print(parser.Usage(err))
-		return
-	}
-
-	err = godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file, please set USERNAME and PASSWORD")
-		return
-	}
-
-	username := os.Getenv("USERNAME")
-	if len(username) < 1 {
-		log.Fatal("You must set your username in the .env file!")
-		return
-	}
-	password := os.Getenv("PASSWORD")
-	if len(password) < 1 {
-		log.Fatal("You must set your password in the .env file!")
 		return
 	}
 
 	if len(*ban) > 1 && len(*ban) < 3 {
 		args := *ban
 		fmt.Println(fmt.Sprintf("Banning %s Reason: %s", args[0], args[1]))
-		callApi(fmt.Sprintf("auth/ban/%s/%s", GetID(args[0], username, password), args[1]), username, password)
+		callApi(fmt.Sprintf("auth/ban/%s/%s", GetID(args[0], Login.Username, Login.Password), args[1]), Login.Username, Login.Password)
 		fmt.Println("Banned", args[0])
 	}
 
 	if hasStrArg(unban) {
 		fmt.Println("Unbanning", *unban)
-		callApi("auth/unban/"+GetID(*unban, username, password), username, password)
+		callApi("auth/unban/"+GetID(*unban, Login.Username, Login.Password), Login.Username, Login.Password)
 		fmt.Println("Unbanned", *unban)
 	}
 
 	if hasStrArg(delete) {
 		fmt.Println("Deleting", *delete)
-		callApi("auth/delete/"+GetID(*delete, username, password), username, password)
+		callApi("auth/delete/"+GetID(*delete, Login.Username, Login.Password), Login.Username, Login.Password)
 		fmt.Println("Deleted", *delete)
 	}
 
@@ -150,18 +186,18 @@ func main() {
 			return
 		}
 		fmt.Println("Setting", args[0]+"'s score to", score)
-		callApi(fmt.Sprintf("auth/restoreScore/%s/%s", GetID(args[0], username, password), args[1]), username, password)
+		callApi(fmt.Sprintf("auth/restoreScore/%s/%s", GetID(args[0], Login.Username, Login.Password), args[1]), Login.Username, Login.Password)
 		fmt.Println("Set", args[0]+"'s score to", score)
 	}
 
 	if hasStrArg(id) {
 		fmt.Println("Getting", *id+"'s id")
-		fmt.Println("ID:", GetID(*id, username, password))
+		fmt.Println("ID:", GetID(*id, Login.Username, Login.Password))
 	}
 
 	if *list {
 		var users []User
-		body := callApi("auth/internalUsers", username, password)
+		body := callApi("auth/internalUsers", Login.Username, Login.Password)
 		json.Unmarshal(body, &users)
 		for _, user := range users {
 			fmt.Println("------------------------------------------------------------------")
@@ -172,7 +208,7 @@ func main() {
 
 	if *jailbroken {
 		var users []User
-		body := callApi("auth/internalUsers", username, password)
+		body := callApi("auth/internalUsers", Login.Username, Login.Password)
 		json.Unmarshal(body, &users)
 		var hasAtLestOneUser bool
 		for _, user := range users {
@@ -190,13 +226,13 @@ func main() {
 	}
 
 	if *logs {
-		body := callApi("auth/logs", username, password)
+		body := callApi("auth/logs", Login.Username, Login.Password)
 		fmt.Println(string(body))
 	}
 
 	if hasStrArg(admin) {
 		fmt.Println("Making", *admin, "a admin")
-		callApi("auth/makeAdmin/"+GetID(*admin, username, password), username, password)
+		callApi("auth/makeAdmin/"+GetID(*admin, Login.Username, Login.Password), Login.Username, Login.Password)
 		fmt.Println("Made", *admin, "a admin")
 	}
 }
